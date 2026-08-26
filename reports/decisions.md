@@ -209,3 +209,42 @@ Será avaliada a viabilidade e utilidade de análises complementares, como:
 * avaliação de risco de não atingimento de metas futuras.
 
 A utilização dessas técnicas dependerá da estrutura e qualidade dos dados disponíveis.
+
+## DEC-015 — Estratégia de acesso e materialização dos dados
+
+**Status:** Aprovada
+
+**Contexto:**  
+A Fase 3 utiliza como fonte principal os dados da Base dos Dados acessados via Google BigQuery. O dataset de modelagem é derivado dessas consultas e posteriormente materializado localmente em formato Parquet.
+
+**Decisão:**  
+Utilizar o BigQuery como fonte oficial e reproduzível dos dados e manter o arquivo `modeling_dataset_2024.parquet` como artefato local derivado, sem versioná-lo diretamente no GitHub.
+
+**Justificativa:**  
+A abordagem permite:
+
+- filtrar os dados diretamente na origem;
+- evitar versionamento desnecessário de datasets derivados;
+- manter rastreabilidade da fonte;
+- reproduzir o dataset por meio de código;
+- separar claramente dados de origem, regras de preparação e artefatos de modelagem.
+
+A utilização do BigQuery também é coerente com a arquitetura adotada na Fase 2. O feedback da etapa anterior indicou que essa escolha é válida, desde que suas consequências sejam documentadas.
+
+**Impactos:**  
+
+A reprodução completa do dataset requer:
+
+- acesso à Google Cloud;
+- autenticação via Application Default Credentials;
+- projeto GCP com acesso ao BigQuery;
+- instalação das dependências especificadas em `requirements.txt`.
+
+O arquivo Parquet não será tratado como fonte oficial. Ele poderá ser regenerado a partir das queries e do pipeline do projeto.
+
+**Artefato gerado:**
+
+`data/processed/modeling_dataset_2024.parquet`
+
+**Observação:**  
+O projeto deverá possuir um pipeline executável capaz de consultar o BigQuery, construir, validar e salvar o dataset de modelagem.

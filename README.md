@@ -32,6 +32,43 @@ Os datasets utilizados na modelagem serão definidos após a auditoria da camada
 
 ---
 
+## Origem e reprodução dos dados
+
+Os dados utilizados neste projeto são provenientes da Base dos Dados e são consultados por meio do Google BigQuery.
+
+A estratégia adotada utiliza o BigQuery como fonte oficial dos dados e realiza a filtragem diretamente na origem, reduzindo transferência e evitando o versionamento de grandes arquivos intermediários.
+
+O dataset principal da Fase 3 é construído a partir de:
+
+- alunos avaliados em 2024;
+- indicadores municipais históricos de 2023.
+
+A integração entre as fontes utiliza as chaves:
+
+- `id_municipio`;
+- `rede`.
+
+O dataset final de modelagem é materializado localmente em:
+
+`data/processed/modeling_dataset_2024.parquet`
+
+Esse arquivo não é versionado no GitHub, pois representa um artefato derivado e pode ser reproduzido a partir do pipeline do projeto.
+
+### Requisitos para reprodução
+
+Para reproduzir completamente o dataset é necessário:
+
+1. Python configurado;
+2. dependências instaladas por meio de `requirements.txt`;
+3. Google Cloud CLI configurado;
+4. autenticação via Application Default Credentials;
+5. acesso a um projeto Google Cloud com BigQuery habilitado.
+
+A autenticação local pode ser realizada por meio de:
+
+```bash
+gcloud auth application-default login
+
 ## Metodologia
 
 O desenvolvimento será organizado nas seguintes etapas:
