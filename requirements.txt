@@ -6,3 +6,5 @@ jupyter
 pyarrow
 google-cloud-bigquery
 db-dtypes
+s3fs
+python-dotenv
