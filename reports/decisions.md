@@ -135,9 +135,13 @@ As decisões abaixo serão preenchidas conforme avançarmos no projeto.
 
 ## DEC-006 — Definição da unidade de análise e variável-alvo
 
-**Status:** Pendente
+**Status:** Definida após integração Gold e EDA.
 
-A definir após auditoria dos dados.
+**Classificação:** decisão específica do grupo.
+
+Uma linha por aluno avaliado em 2024 nas redes Estadual e Municipal,
+com target binário `alfabetizado`. A definição vigente consta em
+[Definição do dataset Gold](modeling_dataset_definition.md).
 
 ---
 
@@ -212,39 +216,25 @@ A utilização dessas técnicas dependerá da estrutura e qualidade dos dados di
 
 ## DEC-015 — Estratégia de acesso e materialização dos dados
 
-**Status:** Aprovada
+**Status:** Atualizada após integração Gold (PR #2) e alinhamento do contrato.
 
-**Contexto:**  
-A Fase 3 utiliza como fonte principal os dados da Base dos Dados acessados via Google BigQuery. O dataset de modelagem é derivado dessas consultas e posteriormente materializado localmente em formato Parquet.
+**Classificação:** decisão específica do grupo, apoiada no requisito oficial
+que determina uso da camada Gold da Fase 2.
 
-**Decisão:**  
-Utilizar o BigQuery como fonte oficial e reproduzível dos dados e manter o arquivo `modeling_dataset_2024.parquet` como artefato local derivado, sem versioná-lo diretamente no GitHub.
+**Decisão vigente:** utilizar as features históricas, territoriais e
+socioeconômicas da Gold da Fase 2 no S3, consolidadas por `gold_features.py`
+e integradas aos alunos de 2024 por `build_modeling_dataset_from_gold`.
+O artefato de modelagem é `data/processed/modeling_dataset_2024_gold.parquet`,
+formalizado em `dataset_contract.py` e verificado por `validate_dataset.py`.
 
-**Justificativa:**  
-A abordagem permite:
+**Histórico:** a decisão inicial utilizava consultas diretas ao BigQuery e
+materializava `modeling_dataset_2024.parquet`. Esse fluxo foi superado como
+definição da modelagem. O notebook de integração ainda usa esse arquivo
+como entrada dos atributos individuais dos alunos, descartando suas antigas
+features históricas. Não deve ser utilizado como dataset principal.
 
-- filtrar os dados diretamente na origem;
-- evitar versionamento desnecessário de datasets derivados;
-- manter rastreabilidade da fonte;
-- reproduzir o dataset por meio de código;
-- separar claramente dados de origem, regras de preparação e artefatos de modelagem.
-
-A utilização do BigQuery também é coerente com a arquitetura adotada na Fase 2. O feedback da etapa anterior indicou que essa escolha é válida, desde que suas consequências sejam documentadas.
-
-**Impactos:**  
-
-A reprodução completa do dataset requer:
-
-- acesso à Google Cloud;
-- autenticação via Application Default Credentials;
-- projeto GCP com acesso ao BigQuery;
-- instalação das dependências especificadas em `requirements.txt`.
-
-O arquivo Parquet não será tratado como fonte oficial. Ele poderá ser regenerado a partir das queries e do pipeline do projeto.
-
-**Artefato gerado:**
-
-`data/processed/modeling_dataset_2024.parquet`
-
-**Observação:**  
-O projeto deverá possuir um pipeline executável capaz de consultar o BigQuery, construir, validar e salvar o dataset de modelagem.
+**Impactos:** o parquet Gold é um artefato derivado local não versionado.
+Reproduzir a integração requer acesso às fontes; validar um parquet já
+materializado e executar testes sintéticos não requer credenciais.
+O fluxo de reprodução, o schema de 24 colunas e as regras de missingness
+estão em [Definição do dataset Gold](modeling_dataset_definition.md).

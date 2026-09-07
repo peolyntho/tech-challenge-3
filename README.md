@@ -123,6 +123,21 @@ data/processed/modeling_dataset_2024_gold.parquet
 
 O arquivo não é versionado no GitHub por representar um artefato derivado de grande volume que pode ser reproduzido a partir do pipeline do projeto.
 
+O contrato e as regras de validação estão em
+[Definição do dataset Gold](reports/modeling_dataset_definition.md).
+Para validar o parquet já disponível localmente, sem acessar as fontes:
+
+```bash
+python -m src.preprocessing.validate_dataset
+```
+
+Os testes sintéticos independem de credenciais e do parquet:
+
+```bash
+python -m tests.test_dataset_contract
+```
+
+
 ---
 
 ## Features disponíveis
