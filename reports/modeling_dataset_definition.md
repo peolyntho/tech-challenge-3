@@ -16,7 +16,8 @@ quantidades prescritas pela FIAP.
 Fluxo atual:
 
 ```text
-Gold Fase 2 (S3)
+Silver alunos (S3, 2026-07-09) -> silver_reader.py -> população 2024
+Gold Fase 2 (S3, 2026-07-10)
   -> gold_reader.py
   -> gold_features.py / build_consolidated_gold_features
   -> build_modeling_dataset.py / build_modeling_dataset_from_gold + alunos 2024
@@ -24,13 +25,24 @@ Gold Fase 2 (S3)
   -> dataset_contract.py -> validate_dataset.py -> dataset validado
 ```
 
-A execução da integração e materialização está em
-`notebooks/00_test_gold_integration.ipynb`. Atualmente esse notebook recupera
-os atributos individuais dos alunos do artefato legado
-`modeling_dataset_2024.parquet`, produzido pelo pipeline de consultas BigQuery.
-Esse arquivo é somente uma entrada intermediária: suas features antigas não
-são reutilizadas pelo builder Gold e ele não é o dataset vigente da modelagem.
-Executar apenas `python -m src.preprocessing.pipeline` não produz o Gold final.
+O fluxo oficial é `python -m src.preprocessing.gold_pipeline`. A população
+individual vem de `silver/alunos/processing_date=2026-07-09/alunos.parquet`
+no bucket `tc-fase-dois-alfabetizacao-bronze`, lida por `silver_reader.py`.
+São aplicados os filtros `ano == 2024`, `presenca == "Presente"`,
+`preenchimento_caderno == "Prova preenchida"` e rede Estadual/Municipal,
+antes de selecionar ano, IDs de aluno/município/escola, rede, peso e target.
+O target é convertido pelo builder Gold existente, sem novas regras.
+As features continuam vindo da Gold de `processing_date=2026-07-10`.
+
+O notebook `00_test_gold_integration.ipynb` também usa o reader Silver.
+`modeling_dataset_2024.parquet` e `src.preprocessing.pipeline` são legados
+opcionais; não participam da geração oficial. O código BigQuery foi mantido.
+Não são necessários GCP, OAuth ou BILLING_PROJECT_ID no fluxo oficial.
+Configure as credenciais AWS de leitura em `.env` ou `env` na raiz
+(variáveis já presentes no ambiente têm prioridade).
+
+A Silver preserva o peso amostral em float32, conforme a transformação da
+Fase 2. Não se afirma igualdade bit a bit com o antigo artefato BigQuery.
 
 ## Schema confirmado
 
@@ -53,8 +65,9 @@ Os dtypes específicos de uma versão de pandas/Parquet não são fixados.
 | Socioeconômicas | `idhm`, `idhm_educacao`, `idhm_renda`, `idhm_longevidade` | Indicadores estaduais Gold |
 | Disponibilidade | `gold_historico_disponivel` | Correspondência no join Gold |
 
-A presença no contrato não define a seleção final de features, X, y, groups,
-pesos amostrais ou split. Essas decisões pertencem à próxima etapa.
+A presença no contrato não define a seleção final de features. A definição
+inicial de X, y, groups, peso reservado e split foi formalizada em
+[Definição de X/y/groups e split](modeling_split_definition.md), sem treinar modelos.
 
 ## Referências do artefato auditado
 
@@ -100,9 +113,14 @@ python -m src.preprocessing.validate_dataset
 
 Esse comando apenas lê o parquet local e não precisa de credenciais AWS/GCP
 nem reexecuta a origem. Ausência de arquivo ou violação do contrato produz
-falha explícita, sem fallback para o legado. A reprodução da origem pelo
-notebook de integração requer acesso autorizado ao S3 e à entrada de alunos;
-a regeneração dessa entrada via BigQuery requer o ambiente GCP correspondente.
+falha explícita, sem fallback para o legado. A reprodução exige somente
+acesso autorizado de leitura às partições Silver e Gold no S3:
+
+```bash
+python -m src.preprocessing.gold_pipeline
+python -m src.preprocessing.validate_dataset
+python -m unittest tests.test_silver_reader
+```
 
 Os testes usam exclusivamente dados sintéticos em memória, inclusive a
 integração entre os builders Gold existentes e o contrato:
@@ -119,5 +137,15 @@ missingness nas duas direções, nulos parciais permitidos, preservação dos
 dados e contagens estritas. O teste positivo estrito usa referências pequenas
 substituídas apenas durante o teste; não fabrica o artefato real.
 
-Sem o parquet local, esses testes validam o código, mas a validação integral
-do artefato continua pendente até sua disponibilização.
+## Reprodução local verificada em 2026-09-08
+
+O fluxo `gold_pipeline` gerou o parquet a partir da Silver e da Gold no S3,
+sem GCP e sem o intermediário legado. A releitura pelo validador estrito
+passou em schema, shape, unicidade, target e missingness Gold.
+Foram confirmadas 1.851.828 linhas, 24 colunas, classes 1/0 com
+1.107.103/744.725 registros e cobertura Gold 1/0 com 1.816.270/35.558.
+Nenhuma divergência nas contagens do contrato. O peso permanece float32
+proveniente da Silver; igualdade bit a bit com o parquet antigo não foi testada.
+
+O parquet é local e não versionado. Em outro ambiente, execute a geração
+e o validador; testes sintéticos sozinhos não validam um artefato real ausente.

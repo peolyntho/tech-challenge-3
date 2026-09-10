@@ -284,7 +284,7 @@ def main() -> None:
         raise FileNotFoundError(
             f"Dataset Gold não encontrado: {DATASET_PATH}. "
             "Disponibilize o parquet local ou reproduza a integração descrita em "
-            "notebooks/00_test_gold_integration.ipynb (requer fontes autorizadas)."
+            "python -m src.preprocessing.gold_pipeline (requer leitura AWS/S3)."
         )
 
     dataset = pd.read_parquet(DATASET_PATH)
